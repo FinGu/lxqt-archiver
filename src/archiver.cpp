@@ -359,6 +359,28 @@ void Archiver::freeStrsGList(GList* strs) {
     g_list_foreach(strs, (GFunc)g_free_wrapper, nullptr);
 }
 
+size_t Archiver::calcDirSizes(ArchiverItem *in){
+    size_t dir_size = 0;
+
+    if(!in->isDir()){
+        return dir_size;
+    }
+
+    for(auto &child: in->children()){
+        if(child->isDir()){
+            ArchiverItem *data = const_cast<ArchiverItem*>(child);
+
+            data->dir_size = calcDirSizes(data);
+
+            dir_size += data->dir_size;
+        } else{
+            dir_size += child->size();
+        }
+    }
+
+    return dir_size;
+}
+
 void Archiver::rebuildDirTree() {
     // The archive content is listed by Archiver in a flat list
     // Let's rebuild the tree structure by mapping dir_path => [file1, file2, ...]
@@ -465,6 +487,8 @@ void Archiver::rebuildDirTree() {
         dirMap_.emplace("/", items_.back().get());
     }
     rootItem_ = dirMap_["/"];
+
+    rootItem_->dir_size = calcDirSizes(rootItem_);
 
     /*for(auto& kv: dirMap_) {
         qDebug("dir: %s: %d", kv.first.c_str(), kv.second->children().size());

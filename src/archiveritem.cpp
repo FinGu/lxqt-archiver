@@ -1,6 +1,6 @@
 #include "archiveritem.h"
 
-ArchiverItem::ArchiverItem(): data_{nullptr}, ownData_{false} {
+ArchiverItem::ArchiverItem(): dir_size{0}, data_{nullptr}, ownData_{false} {
 }
 
 ArchiverItem::ArchiverItem(const FileData* data, bool ownData):
@@ -46,7 +46,11 @@ qint64 ArchiverItem::modifiedTime() const {
 }
 
 size_t ArchiverItem::size() const {
-    return data_ ? data_->size : 0;
+    if(!data_){
+        return 0;
+    }
+
+    return isDir() ? dir_size : data_->size;
 }
 
 bool ArchiverItem::isEncrypted() const {

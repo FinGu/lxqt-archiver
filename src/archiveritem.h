@@ -47,6 +47,8 @@ public:
 
     void allChildren(std::vector<const ArchiverItem*>& results) const;
 
+    size_t dir_size;
+
 private:
     std::vector<const ArchiverItem*> children_;
     const FileData* data_;  // data from FrArchiver (optional)

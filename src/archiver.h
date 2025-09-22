@@ -148,6 +148,8 @@ private:
 
     void rebuildDirTree();
 
+    size_t calcDirSizes(ArchiverItem *in);
+
     static QStringList mimeDescToNameFilters(int *mimeDescIndexes);
 
 private:
