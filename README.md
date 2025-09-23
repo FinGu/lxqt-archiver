@@ -1,5 +1,7 @@
 # LXQt Archiver
 
+Personal fork which adds dir sizes and drag and drop for archives.
+
 ## Overview
 
 A simple & lightweight Qt file archiver.
