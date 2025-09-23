@@ -285,39 +285,45 @@ void MainWindow::loadFile(const Fm::FilePath &file) {
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
     // If the drag is originated in this window, ignore it.
     // This is needed when an archive contains another archive, as with deb packages.
-    if(event->source()) {
+    if(event->source() 
+            || !event->mimeData()->hasUrls()) {
         event->ignore();
         return;
     }
-    if(event->mimeData()->hasUrls()) {
-        const auto urlList = event->mimeData()->urls();
-        if(!urlList.isEmpty()) {
-            auto url = urlList.at(0);
-            if(!url.isEmpty()) {
-                const auto mimeType = Fm::MimeType::guessFromFileName(url.toEncoded().constData())->name();
-                if(archiver_->supportedOpenMimeTypes().contains(QString::fromUtf8(mimeType))) {
-                    event->acceptProposedAction();
-                    return;
-                }
-            }
-        }
-    }
-    event->ignore();
+
+    event->acceptProposedAction();
 }
 
 void MainWindow::dropEvent(QDropEvent* event) {
     if(event->mimeData()->hasUrls()) {
         const auto urlList = event->mimeData()->urls();
         if(!urlList.isEmpty()) {
-            auto url = urlList.at(0);
-            if(!url.isEmpty()) {
-                auto path = Fm::FilePath::fromUri(url.toEncoded().constData());
-                if(path.hasParent()) {
-                    lasrDir_ = QUrl::fromEncoded(QByteArray(path.parent().uri().get()));
+            if(archiver_->isLoaded()){
+                auto srcPaths = Fm::pathListFromQUrls(urlList);
+                archiver_->addFiles(srcPaths,
+                            currentDirPath_.c_str(),
+                            false,
+                            password_.empty() ? nullptr : password_.c_str(),
+                            encryptHeader_,
+                            FR_COMPRESSION_NORMAL,
+                            splitVolumes_ ? volumeSize_ : 0);
+            } else{
+                auto url = urlList.at(0);
+                if(!url.isEmpty()) {
+                    const auto mimeType = Fm::MimeType::guessFromFileName(url.toEncoded().constData())->name();
+
+                    if(!archiver_->supportedOpenMimeTypes().contains(QString::fromUtf8(mimeType))) {
+                        return;
+                    }
+
+                    auto path = Fm::FilePath::fromUri(url.toEncoded().constData());
+                    if(path.hasParent()) {
+                        lasrDir_ = QUrl::fromEncoded(QByteArray(path.parent().uri().get()));
+                    }
+                    loadFile(path);
+                    raise();
+                    activateWindow();
                 }
-                loadFile(path);
-                raise();
-                activateWindow();
             }
         }
     }
