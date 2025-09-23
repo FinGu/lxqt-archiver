@@ -381,10 +381,13 @@ size_t Archiver::calcDirSizes(ArchiverItem *in){
     return dir_size;
 }
 
-void Archiver::rebuildDirTree() {
+void Archiver::rebuildDirTree(bool refreshRootDir) {
     // The archive content is listed by Archiver in a flat list
     // Let's rebuild the tree structure by mapping dir_path => [file1, file2, ...]
-    rootItem_ = nullptr;
+    if(refreshRootDir){
+        rootItem_ = nullptr;
+    }
+    
     items_.clear();
     dirMap_.clear();
 
@@ -486,9 +489,11 @@ void Archiver::rebuildDirTree() {
         items_.emplace_back(new ArchiverItem{fileData, true}); // take ownership of the new FileData object
         dirMap_.emplace("/", items_.back().get());
     }
-    rootItem_ = dirMap_["/"];
 
-    rootItem_->dir_size = calcDirSizes(rootItem_);
+    if(refreshRootDir){
+        rootItem_ = dirMap_["/"];
+        rootItem_->dir_size = calcDirSizes(rootItem_);
+    }
 
     /*for(auto& kv: dirMap_) {
         qDebug("dir: %s: %d", kv.first.c_str(), kv.second->children().size());
@@ -601,10 +606,14 @@ void Archiver::onDone(FrArchive*, FrAction action, FrProcError* error, Archiver*
     // FIXME: error might become dangling pointer for queued connections. :-(
 
     switch(action) {
+    case FR_ACTION_DELETING_FILES:
+    case FR_ACTION_ADDING_FILES:
+        _this->rebuildDirTree(false);
+        break;
     case FR_ACTION_CREATING_NEW_ARCHIVE:  // same as listing empty content
     case FR_ACTION_CREATING_ARCHIVE:           /* creating a local archive */
     case FR_ACTION_LISTING_CONTENT:            /* listing the content of the archive */
-        _this->rebuildDirTree();
+        _this->rebuildDirTree(true);
         break;
     default:
         break;
