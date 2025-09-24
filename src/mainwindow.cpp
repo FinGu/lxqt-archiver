@@ -50,6 +50,7 @@
 // #include <libfm-qt6/pathbar.h>
 
 #include <map>
+#include <iostream>
 
 
 MainWindow::MainWindow(QWidget* parent):
@@ -972,9 +973,13 @@ void MainWindow::onActionFinished(FrAction action, ArchiverError err) {
 
         // try to see if the previous current dir path is still valid
         currentDirItem_ = archiver_->dirByPath(currentDirPath_.c_str());
+
+        std::cout << currentDirPath_.c_str() << '\n';
+
         if(!currentDirItem_) {
             currentDirItem_ = archiver_->dirTreeRoot();
         }
+
         if(currentDirItem_) {
             chdir(currentDirItem_);
         }

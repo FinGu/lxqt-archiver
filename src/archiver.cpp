@@ -16,6 +16,7 @@ extern "C" {
 #include <QDir>
 
 #include <unordered_map>
+#include <iostream>
 
 
 Archiver::Archiver(QObject* parent):
@@ -381,12 +382,11 @@ size_t Archiver::calcDirSizes(ArchiverItem *in){
     return dir_size;
 }
 
-void Archiver::rebuildDirTree(bool refreshRootDir) {
+void Archiver::rebuildDirTree() {
     // The archive content is listed by Archiver in a flat list
     // Let's rebuild the tree structure by mapping dir_path => [file1, file2, ...]
-    if(refreshRootDir){
-        rootItem_ = nullptr;
-    }
+
+    rootItem_ = nullptr;
     
     items_.clear();
     dirMap_.clear();
@@ -490,10 +490,9 @@ void Archiver::rebuildDirTree(bool refreshRootDir) {
         dirMap_.emplace("/", items_.back().get());
     }
 
-    if(refreshRootDir){
-        rootItem_ = dirMap_["/"];
-        rootItem_->dir_size = calcDirSizes(rootItem_);
-    }
+    rootItem_ = dirMap_["/"];
+
+    rootItem_->dir_size = calcDirSizes(rootItem_);
 
     /*for(auto& kv: dirMap_) {
         qDebug("dir: %s: %d", kv.first.c_str(), kv.second->children().size());
@@ -563,7 +562,8 @@ const ArchiverItem *Archiver::dirByPath(const char *path) const {
     if(dirPath.length() > 1 && dirPath.back() == '/') {
         dirPath.pop_back();
     }
-    auto it = dirMap_.find(path);
+    
+    auto it = dirMap_.find(dirPath);
     return it != dirMap_.end() ? it->second : nullptr;
 }
 
@@ -606,14 +606,10 @@ void Archiver::onDone(FrArchive*, FrAction action, FrProcError* error, Archiver*
     // FIXME: error might become dangling pointer for queued connections. :-(
 
     switch(action) {
-    case FR_ACTION_DELETING_FILES:
-    case FR_ACTION_ADDING_FILES:
-        _this->rebuildDirTree(false);
-        break;
     case FR_ACTION_CREATING_NEW_ARCHIVE:  // same as listing empty content
     case FR_ACTION_CREATING_ARCHIVE:           /* creating a local archive */
     case FR_ACTION_LISTING_CONTENT:            /* listing the content of the archive */
-        _this->rebuildDirTree(true);
+        _this->rebuildDirTree();
         break;
     default:
         break;

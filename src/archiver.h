@@ -146,7 +146,7 @@ private:
 
     static void freeStrsGList(GList* strs);
 
-    void rebuildDirTree(bool refreshRootDir);
+    void rebuildDirTree();
 
     size_t calcDirSizes(ArchiverItem *in);
 
